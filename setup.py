@@ -45,7 +45,18 @@ def fixNameAndAddMobility(sceneId):
 
     print('Scene ID found in database. Processing...')
     SCENE_META_DATA = API_RESPONSE['responseObject']['surfaceList']
-    
+    if (len(SCENE_META_DATA) < 0): 
+        print('API Return empty data. Cannot proceed forward')
+        return
+    else:
+        print('Found ' + str(len(SCENE_META_DATA)) + ' surfaces from API.')
+
+    def searchForMeshName(meshName):
+        for item in SCENE_META_DATA:
+            if item['meshName'].lower() == meshName.lower():
+                return item
+            else: 
+                return None
 
     # Start scanning and fixing scene actors - fix_name_issues.py
     # This script MUST ALWAYS run before the "movable script", otherwise the name mismatching will cause undesired result
@@ -79,7 +90,8 @@ def fixNameAndAddMobility(sceneId):
 
             act.set_actor_label('tmpName')
             act.set_actor_label(cachedName)
-            
+        
+    for act in list_static_mesh_actors:
         # Check the name again, if it's still mismatched that means user is using the wrong Max file
         # After the loop => Print out mismatchedNames
         MESH_NAME = act.get_actor_label()
@@ -92,18 +104,17 @@ def fixNameAndAddMobility(sceneId):
             # If an actor's tag is belong to one of the MOVEABLE_ARRAY's children, then it's moveable. otherwise immovable
             # To get an actor's tag, we just need to look up the actor's name inside SCENE_META_DATA
             MOVEABLE_ARRAY = ['CDU', 'DOH', 'FCT', 'SNK', 'SHP', 'PPG', 'TOL', 'SHH', 'DOR', 'CDL', 'CDI']
-            RECORD = [x for x in SCENE_META_DATA if (hasattr(x, 'meshName') and hasattr(x, 'surfacetag') and x.meshName.lower() == MESH_NAME.lower())]
+            RECORD = searchForMeshName(MESH_NAME)
             if RECORD:
-                DATA = RECORD[0]
-
+                print('Record found for ' + MESH_NAME)
                 # Note: The line below assumes that all surfacetag come in the format [roomkey]_[surfacekey]
                 # Should the API change, we're fucked
-                SURFACE_TAG = DATA['surfacetag'].split('_')[1]
+                SURFACE_TAG = RECORD['surfacetag'].split('_')[1]
                 if (SURFACE_TAG in MOVEABLE_ARRAY): 
                     # Set actor movable
                     act.set_mobility(unreal.ComponentMobility.MOVABLE)  
                     print(MESH_NAME, ' has been set to MOVEABLE')
-        
+
     print('\n')
     print('-------------------SCRIPT EXECUTED---------------------')
     if (nameIssueCount > 0):

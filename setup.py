@@ -90,8 +90,8 @@ def fixNameAndAddMobility(sceneId):
 
             act.set_actor_label('tmpName')
             act.set_actor_label(cachedName)
-        
-    for act in list_static_mesh_actors:
+
+
         # Check the name again, if it's still mismatched that means user is using the wrong Max file
         # After the loop => Print out mismatchedNames
         MESH_NAME = act.get_actor_label()
@@ -104,9 +104,9 @@ def fixNameAndAddMobility(sceneId):
             # If an actor's tag is belong to one of the MOVEABLE_ARRAY's children, then it's moveable. otherwise immovable
             # To get an actor's tag, we just need to look up the actor's name inside SCENE_META_DATA
             MOVEABLE_ARRAY = ['CDU', 'DOH', 'FCT', 'SNK', 'SHP', 'PPG', 'TOL', 'SHH', 'DOR', 'CDL', 'CDI']
-            RECORD = searchForMeshName(MESH_NAME)
+            RECORD = next((x for x in SCENE_META_DATA if x['meshName'].lower() == MESH_NAME.lower()), None)
             if RECORD:
-                print('Record found for ' + MESH_NAME)
+                print('----------Record found for ' + MESH_NAME)
                 # Note: The line below assumes that all surfacetag come in the format [roomkey]_[surfacekey]
                 # Should the API change, we're fucked
                 SURFACE_TAG = RECORD['surfacetag'].split('_')[1]
@@ -114,7 +114,11 @@ def fixNameAndAddMobility(sceneId):
                     # Set actor movable
                     act.set_mobility(unreal.ComponentMobility.MOVABLE)  
                     print(MESH_NAME, ' has been set to MOVEABLE')
-
+                else:
+                    print(MESH_NAME, ' has been set to IMMOVEABLE')
+            else:
+                print('cannot find record for ' + MESH_NAME)
+        
     print('\n')
     print('-------------------SCRIPT EXECUTED---------------------')
     if (nameIssueCount > 0):
